@@ -194,8 +194,8 @@ export default class Time extends Component<TimeProps, TimeState> {
   renderTimes = (): JSX.Element[] => {
     let times: Date[] = [];
     const format = typeof this.props.format === "string" ? this.props.format : "p";
-
-    const activeDate = this.props.setTimes?.[0] || this.props.selected || this.props.openToDate || newDate();
+    const activeDate =  this.props.selected || this.props.openToDate || this.props.setTimes?.[0] || newDate();
+    
     if(this.props.setTimes) {
       times = this.props.setTimes;
     } else {
