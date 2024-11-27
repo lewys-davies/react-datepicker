@@ -33,6 +33,7 @@ interface TimeProps
   monthRef?: HTMLDivElement;
   timeCaption?: string;
   injectTimes?: Date[];
+  setTimes?: Date[];
   handleOnKeyDown?: React.KeyboardEventHandler<HTMLLIElement>;
   locale?: Locale;
   showTimeSelectOnly?: boolean;
@@ -116,13 +117,18 @@ export default class Time extends Component<TimeProps, TimeState> {
   isSelectedTime = (time: Date) =>
     this.props.selected && isSameMinute(this.props.selected, time);
 
-  isDisabledTime = (time: Date): boolean | undefined =>
-    ((this.props.minTime || this.props.maxTime) &&
-      isTimeInDisabledRange(time, this.props)) ||
-    ((this.props.excludeTimes ||
-      this.props.includeTimes ||
-      this.props.filterTime) &&
-      isTimeDisabled(time, this.props));
+  isDisabledTime = (time: Date): boolean | undefined => {
+    if (this.props.setTimes) {
+      return false;
+    }
+    return (
+      ((this.props.minTime || this.props.maxTime) && isTimeInDisabledRange(time, this.props)) ||
+      ((this.props.excludeTimes ||
+        this.props.includeTimes ||
+        this.props.filterTime) &&
+        isTimeDisabled(time, this.props))
+    );
+  };
 
   liClasses = (time: Date): string => {
     const classes = [
@@ -187,36 +193,38 @@ export default class Time extends Component<TimeProps, TimeState> {
 
   renderTimes = (): JSX.Element[] => {
     let times: Date[] = [];
-    const format =
-      typeof this.props.format === "string" ? this.props.format : "p";
-    const intervals = this.props.intervals ?? Time.defaultProps.intervals;
+    const format = typeof this.props.format === "string" ? this.props.format : "p";
 
-    const activeDate =
-      this.props.selected || this.props.openToDate || newDate();
+    const activeDate = this.props.setTimes?.[0] || this.props.selected || this.props.openToDate || newDate();
+    if(this.props.setTimes) {
+      times = this.props.setTimes;
+    } else {
+      const intervals = this.props.intervals ?? Time.defaultProps.intervals;
 
-    const base = getStartOfDay(activeDate);
-    const sortedInjectTimes =
-      this.props.injectTimes &&
-      this.props.injectTimes.sort(function (a: Date, b: Date): number {
-        return a.getTime() - b.getTime();
-      });
-
-    const minutesInDay = 60 * getHoursInDay(activeDate);
-    const multiplier = minutesInDay / intervals;
-
-    for (let i = 0; i < multiplier; i++) {
-      const currentTime = addMinutes(base, i * intervals);
-      times.push(currentTime);
-
-      if (sortedInjectTimes) {
-        const timesToInject = timesToInjectAfter(
-          base,
-          currentTime,
-          i,
-          intervals,
-          sortedInjectTimes,
-        );
-        times = times.concat(timesToInject);
+      const base = getStartOfDay(activeDate);
+      const sortedInjectTimes =
+        this.props.injectTimes &&
+        this.props.injectTimes.sort(function (a: Date, b: Date): number {
+          return a.getTime() - b.getTime();
+        });
+  
+      const minutesInDay = 60 * getHoursInDay(activeDate);
+      const multiplier = minutesInDay / intervals;
+  
+      for (let i = 0; i < multiplier; i++) {
+        const currentTime = addMinutes(base, i * intervals);
+        times.push(currentTime);
+  
+        if (sortedInjectTimes) {
+          const timesToInject = timesToInjectAfter(
+            base,
+            currentTime,
+            i,
+            intervals,
+            sortedInjectTimes,
+          );
+          times = times.concat(timesToInject);
+        }
       }
     }
 
