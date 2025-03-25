@@ -4,7 +4,6 @@ import React, { Component, cloneElement } from "react";
 import Calendar from "./calendar";
 import CalendarIcon from "./calendar_icon";
 import {
-  set,
   newDate,
   isDate,
   isBefore,
@@ -126,7 +125,7 @@ export type DatePickerProps = OmitUnion<
   | "selectsMultiple"
   | "dropdownMode"
 > &
-  Pick<CalendarIconProps, "icon"> &
+  Partial<Pick<CalendarIconProps, "icon">> &
   OmitUnion<PortalProps, "children" | "portalId"> &
   OmitUnion<
     PopperComponentProps,
@@ -176,7 +175,8 @@ export type DatePickerProps = OmitUnion<
     calendarIconClassName?: string;
     toggleCalendarOnIconClick?: boolean;
     holidays?: Holiday[];
-    startDate?: Date;
+    startDate?: Date | null;
+    endDate?: Date | null;
     selected?: Date | null;
     value?: string;
     customInputRef?: string;
@@ -452,25 +452,19 @@ export default class DatePicker extends Component<
     }
   };
 
-  safeFocus = () => {
-    setTimeout(() => {
-      this.input?.focus?.({ preventScroll: true });
-    }, 0);
-  };
-
-  safeBlur = () => {
-    setTimeout(() => {
-      this.input?.blur?.();
-    }, 0);
-  };
-
   setFocus = () => {
-    this.safeFocus();
+    this.input?.focus?.({ preventScroll: true });
   };
 
   setBlur = () => {
-    this.safeBlur();
+    this.input?.blur?.();
     this.cancelFocusInput();
+  };
+
+  deferBlur = () => {
+    requestAnimationFrame(() => {
+      this.setBlur();
+    });
   };
 
   setOpen = (open: boolean, skipSetBlur: boolean = false): void => {
@@ -490,7 +484,7 @@ export default class DatePicker extends Component<
               focused: skipSetBlur ? prev.focused : false,
             }),
             () => {
-              !skipSetBlur && this.setBlur();
+              !skipSetBlur && this.deferBlur();
 
               this.setState({ inputValue: null });
             },
@@ -514,9 +508,13 @@ export default class DatePicker extends Component<
       this.resetHiddenStatus();
     }
 
-    if (!this.state.preventFocus && isOpenAllowed) {
+    if (!this.state.preventFocus) {
       this.props.onFocus?.(event);
-      if (!this.props.preventOpenOnFocus && !this.props.readOnly) {
+      if (
+        isOpenAllowed &&
+        !this.props.preventOpenOnFocus &&
+        !this.props.readOnly
+      ) {
         this.setOpen(true);
       }
     }
@@ -559,6 +557,10 @@ export default class DatePicker extends Component<
       this.props.onBlur?.(event);
     }
 
+    if (this.state.open && this.props.open === false) {
+      this.setOpen(false);
+    }
+
     this.setState({ focused: false });
   };
 
@@ -594,13 +596,12 @@ export default class DatePicker extends Component<
       lastPreSelectChange: PRESELECT_CHANGE_VIA_INPUT,
     });
 
-    const {
-      dateFormat = DatePicker.defaultProps.dateFormat,
-      strictParsing = DatePicker.defaultProps.strictParsing,
-      selectsRange,
-      startDate,
-      endDate,
-    } = this.props;
+    const { selectsRange, startDate, endDate } = this.props;
+
+    const dateFormat =
+      this.props.dateFormat ?? DatePicker.defaultProps.dateFormat;
+    const strictParsing =
+      this.props.strictParsing ?? DatePicker.defaultProps.strictParsing;
 
     const value =
       event?.target instanceof HTMLInputElement ? event.target.value : "";
@@ -638,27 +639,13 @@ export default class DatePicker extends Component<
       this.props.onChange?.([startDateNew, endDateNew], event);
     } else {
       // not selectsRange
-      let date = parseDate(
+      const date = parseDate(
         value,
         dateFormat,
         this.props.locale,
         strictParsing,
-        this.props.minDate,
+        this.props.selected ?? undefined,
       );
-
-      // Use date from `selected` prop when manipulating only time for input value
-      if (
-        this.props.showTimeSelectOnly &&
-        this.props.selected &&
-        date &&
-        !isSameDay(date, this.props.selected)
-      ) {
-        date = set(this.props.selected, {
-          hours: getHours(date),
-          minutes: getMinutes(date),
-          seconds: getSeconds(date),
-        });
-      }
 
       // Update selection if either (1) date was successfully parsed, or (2) input field is empty
       if (date || !value) {
@@ -961,6 +948,7 @@ export default class DatePicker extends Component<
       const copy = newDate(this.state.preSelection);
       if (eventKey === KeyType.Enter) {
         event.preventDefault();
+        (event.target as HTMLInputElement).blur();
         if (
           this.inputOk() &&
           this.state.lastPreSelectChange === PRESELECT_CHANGE_VIA_NAVIGATE
@@ -972,6 +960,7 @@ export default class DatePicker extends Component<
         }
       } else if (eventKey === KeyType.Escape) {
         event.preventDefault();
+        (event.target as HTMLInputElement).blur();
         this.sendFocusBackToInput();
         this.setOpen(false);
       } else if (eventKey === KeyType.Tab) {
@@ -1388,7 +1377,7 @@ export default class DatePicker extends Component<
     });
   };
 
-  renderClearButton = (): JSX.Element | null => {
+  renderClearButton = (): React.ReactElement | null => {
     const {
       isClearable,
       disabled,
@@ -1427,7 +1416,7 @@ export default class DatePicker extends Component<
     }
   };
 
-  renderInputContainer(): JSX.Element {
+  renderInputContainer(): React.ReactElement {
     const {
       showIcon,
       icon,
@@ -1471,7 +1460,7 @@ export default class DatePicker extends Component<
     );
   }
 
-  render(): JSX.Element | null {
+  render(): React.ReactElement | null {
     const calendar = this.renderCalendar();
 
     if (this.props.inline) return calendar;

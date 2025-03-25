@@ -1,6 +1,7 @@
 import { render, act, waitFor, fireEvent } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import { enUS, enGB } from "date-fns/locale";
-import React from "react";
+import React, { useState } from "react";
 
 import {
   KeyType,
@@ -26,6 +27,7 @@ import {
 import DatePicker, { registerLocale } from "../index";
 
 import CustomInput from "./helper_components/custom_input";
+import ShadowRoot from "./helper_components/shadow_root";
 import TestWrapper from "./helper_components/test_wrapper";
 import { getKey, safeQuerySelector } from "./test_utils";
 
@@ -117,6 +119,32 @@ describe("DatePicker", () => {
     expect(container.querySelector(".react-datepicker")).toBeFalsy();
   });
 
+  it("should be executed props.onFocus on input focus when the document visibility changes", () => {
+    const onFocusSpy = jest.fn();
+
+    const { container } = render(<DatePicker onFocus={onFocusSpy} />);
+
+    const input = safeQuerySelector<HTMLInputElement>(container, "input");
+
+    fireEvent.focus(input);
+    expect(onFocusSpy).toHaveBeenCalled();
+
+    expect(container.querySelector(".react-datepicker")).toBeTruthy();
+    fireEvent.keyDown(input, getKey(KeyType.Escape));
+    fireEvent.blur(input);
+    expect(container.querySelector(".react-datepicker")).toBeFalsy();
+
+    hideDocument(input);
+    showDocument(input);
+
+    expect(onFocusSpy).toHaveBeenCalled();
+    expect(container.querySelector(".react-datepicker")).toBeFalsy();
+
+    fireEvent.click(input);
+    expect(onFocusSpy).toHaveBeenCalled();
+    expect(container.querySelector(".react-datepicker")).toBeTruthy();
+  });
+
   it("should show the calendar when focusing on the date input", () => {
     const { container } = render(<DatePicker />);
 
@@ -194,6 +222,33 @@ describe("DatePicker", () => {
     fireEvent.click(instance!.input!);
     expect(instance!.calendar).toBeDefined();
     expect(shadow.getElementById("test-portal")).toBeDefined();
+  });
+
+  it("calendar should stay open when clicked within shadow dom and closed when clicked outside", async () => {
+    let instance: DatePicker | null = null;
+    render(
+      <ShadowRoot>
+        <DatePicker
+          ref={(node) => {
+            instance = node;
+          }}
+        />
+      </ShadowRoot>,
+    );
+
+    expect(instance).toBeTruthy();
+    expect(instance!.input).toBeTruthy();
+
+    await userEvent.click(instance!.input!);
+    expect(instance!.isCalendarOpen()).toBe(true);
+    expect(instance!.calendar).toBeTruthy();
+    expect(instance!.calendar!.containerRef.current).toBeTruthy();
+
+    await userEvent.click(instance!.calendar!.containerRef.current!);
+    expect(instance!.isCalendarOpen()).toBe(true);
+
+    await userEvent.click(document.body);
+    expect(instance!.isCalendarOpen()).toBe(false);
   });
 
   it("should not set open state when it is disabled and gets clicked", () => {
@@ -940,7 +995,7 @@ describe("DatePicker", () => {
     const input = safeQuerySelector<HTMLInputElement>(container, "input");
     fireEvent.change(input, {
       target: {
-        value: newDate("2014-01-02"),
+        value: "01/02/2014",
       },
     });
 
@@ -950,7 +1005,6 @@ describe("DatePicker", () => {
     expect(getSeconds(date!)).toBe(12);
   });
 
-  // eslint-disable-next-line jest/expect-expect
   it("should mount and unmount properly", () => {
     type State = {
       mounted: boolean;
@@ -1722,7 +1776,7 @@ describe("DatePicker", () => {
       return render(
         <DatePicker
           selected={new Date("1993-07-02")}
-          minDate={new Date("1800/01/01")}
+          minDate={new Date("1800-01-01")}
           open
         />,
       );
@@ -1733,11 +1787,11 @@ describe("DatePicker", () => {
       const input = safeQuerySelector<HTMLInputElement>(container, "input");
       fireEvent.change(input, {
         target: {
-          value: "1801/01/01",
+          value: "01/01/1801",
         },
       });
 
-      expect(container.querySelector("input")?.value).toBe("1801/01/01");
+      expect(container.querySelector("input")?.value).toBe("01/01/1801");
       expect(
         container.querySelector(".react-datepicker__current-month")?.innerHTML,
       ).toBe("January 1801");
@@ -1829,7 +1883,7 @@ describe("DatePicker", () => {
     it("should update the selected date on manual input", () => {
       const data = getOnInputKeyDownStuff();
       fireEvent.change(data.dateInput, {
-        target: { value: "02/02/2017" },
+        target: { value: "2017-02-02" },
       });
       fireEvent.keyDown(data.dateInput, getKey(KeyType.Enter));
       data.copyM = newDate("2017-02-02");
@@ -4187,6 +4241,46 @@ describe("DatePicker", () => {
           formatDate(data.instance.state.preSelection!, data.testFormat),
         ).toBe(formatDate(new Date("2021-03-01"), data.testFormat));
       });
+    });
+  });
+
+  describe("input reset", () => {
+    const renderDatePickerInput = () => {
+      const WrapperComponent = () => {
+        const [date, setDate] = useState<Date | null>(new Date());
+        return <DatePicker open={false} selected={date} onChange={setDate} />;
+      };
+
+      return render(<WrapperComponent />);
+    };
+
+    it("should reset the date input element with the previously entered value element on blur even when the calendar open is false", () => {
+      const { container } = renderDatePickerInput();
+      const input = safeQuerySelector(container, "input") as HTMLInputElement;
+
+      if (!input) {
+        throw new Error("Input element not found");
+      }
+
+      fireEvent.click(input);
+      const DATE_VALUE = "02/22/2025";
+      fireEvent.change(input, {
+        target: {
+          value: DATE_VALUE,
+        },
+      });
+      fireEvent.blur(input);
+      expect(input.value).toBe(DATE_VALUE);
+
+      fireEvent.click(input);
+      const INVALID_DATE_VALUE = "2025-02-45";
+      fireEvent.change(input, {
+        target: {
+          value: INVALID_DATE_VALUE,
+        },
+      });
+      fireEvent.blur(input);
+      expect(input.value).toBe(DATE_VALUE);
     });
   });
 });

@@ -124,6 +124,8 @@ interface MonthProps
   handleOnMonthKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   ariaLabelPrefix?: string;
   day: Date;
+  startDate?: Date | null;
+  endDate?: Date | null;
   orderInDisplay?: number;
   fixedHeight?: boolean;
   peekNextMonth?: boolean;
@@ -449,7 +451,6 @@ export default class Month extends Component<MonthProps> {
       ? isPreSelected(this.props.preSelection)
       : undefined;
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       weeks.push(
         <Week
@@ -931,6 +932,7 @@ export default class Month extends Component<MonthProps> {
         "react-datepicker__quarter-text--range-start":
           this.isRangeStartQuarter(q),
         "react-datepicker__quarter-text--range-end": this.isRangeEndQuarter(q),
+        "react-datepicker__quarter-text--today": this.isCurrentQuarter(day, q),
       },
     );
   };

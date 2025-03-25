@@ -16,7 +16,7 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
 
       - name: Corepack enable
         run: corepack enable
@@ -36,13 +36,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      
-
       - name: Install dependencies
         run: yarn install
 
       - name: Install docs dependencies
         run: yarn --cwd docs-site install
+
+      - name: Lint docs
+        run: yarn --cwd docs-site lint
 
       - name: Build datepicker
         run: yarn build

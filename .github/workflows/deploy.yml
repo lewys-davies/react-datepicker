@@ -13,7 +13,7 @@ jobs:
       - name: Set Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
 
       - name: Corepack enable
         run: corepack enable
@@ -41,4 +41,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages # The branch the action should deploy to.
-          folder: docs-site/build # The folder the action should deploy.
+          folder: docs-site/dist # The folder the action should deploy.

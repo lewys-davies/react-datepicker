@@ -39,7 +39,6 @@ interface DayProps
   disabledKeyboardNavigation?: boolean;
   day: Date;
   dayClassName?: (date: Date) => string;
-  endDate?: Date;
   highlightDates?: Map<string, string[]>;
   holidays?: HolidaysMap;
   inline?: boolean;
@@ -60,9 +59,10 @@ interface DayProps
   selectsDisabledDaysInRange?: boolean;
   selectsMultiple?: boolean;
   selectedDates?: Date[];
-  startDate?: Date;
+  startDate?: Date | null;
+  endDate?: Date | null;
   renderDayContents?: (day: number, date: Date) => React.ReactNode;
-  containerRef?: React.RefObject<HTMLDivElement>;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
   calendarStartDay?: DateNumberType;
   locale?: Locale;
   monthShowsDuplicateDaysEnd?: boolean;

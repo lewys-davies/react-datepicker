@@ -191,7 +191,7 @@ export default class Time extends Component<TimeProps, TimeState> {
     this.props.handleOnKeyDown?.(event);
   };
 
-  renderTimes = (): JSX.Element[] => {
+  renderTimes = (): React.ReactElement[] => {
     let times: Date[] = [];
     const format = typeof this.props.format === "string" ? this.props.format : "p";
     const activeDate =  this.props.selected || this.props.openToDate || this.props.setTimes?.[0] || newDate();
@@ -236,7 +236,7 @@ export default class Time extends Component<TimeProps, TimeState> {
       return prev;
     }, times[0]);
 
-    return times.map<JSX.Element>((time): JSX.Element => {
+    return times.map<React.ReactElement>((time): React.ReactElement => {
       return (
         <li
           key={time.valueOf()}
@@ -261,7 +261,7 @@ export default class Time extends Component<TimeProps, TimeState> {
     });
   };
 
-  renderTimeCaption = (): JSX.Element => {
+  renderTimeCaption = (): React.ReactElement => {
     if (this.props.showTimeCaption === false) {
       return <></>;
     }

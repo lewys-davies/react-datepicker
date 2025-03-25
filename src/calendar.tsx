@@ -182,7 +182,7 @@ type CalendarProps = React.PropsWithChildren<
       ) => void;
       renderCustomHeader?: (
         props: ReactDatePickerCustomHeaderProps,
-      ) => JSX.Element;
+      ) => React.ReactElement;
       onYearMouseEnter?: YearProps["onYearMouseEnter"];
       onYearMouseLeave?: YearProps["onYearMouseLeave"];
       monthAriaLabelPrefix?: MonthProps["ariaLabelPrefix"];
@@ -281,7 +281,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     }
   }
 
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 
   monthContainer: CalendarState["monthContainer"] = undefined;
 
@@ -459,14 +459,14 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     );
   };
 
-  header = (date: Date = this.state.date): JSX.Element[] => {
+  header = (date: Date = this.state.date): React.ReactElement[] => {
     const startOfWeek = getStartOfWeek(
       date,
       this.props.locale,
       this.props.calendarStartDay,
     );
 
-    const dayNames: JSX.Element[] = [];
+    const dayNames: React.ReactElement[] = [];
     if (this.props.showWeekNumbers) {
       dayNames.push(
         <div key="W" className="react-datepicker__day-name">
@@ -524,7 +524,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     this.setState({ selectingDate: undefined });
   };
 
-  renderPreviousButton = (): JSX.Element | void => {
+  renderPreviousButton = (): React.ReactElement | void => {
     if (this.props.renderCustomHeader) {
       return;
     }
@@ -643,7 +643,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     );
   };
 
-  renderNextButton = (): JSX.Element | void => {
+  renderNextButton = (): React.ReactElement | void => {
     if (this.props.renderCustomHeader) {
       return;
     }
@@ -740,7 +740,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     );
   };
 
-  renderCurrentMonth = (date: Date = this.state.date): JSX.Element => {
+  renderCurrentMonth = (date: Date = this.state.date): React.ReactElement => {
     const classes = ["react-datepicker__current-month"];
 
     if (this.props.showYearDropdown) {
@@ -761,7 +761,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
 
   renderYearDropdown = (
     overrideHide: boolean = false,
-  ): JSX.Element | undefined => {
+  ): React.ReactElement | undefined => {
     if (!this.props.showYearDropdown || overrideHide) {
       return;
     }
@@ -778,7 +778,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
 
   renderMonthDropdown = (
     overrideHide: boolean = false,
-  ): JSX.Element | undefined => {
+  ): React.ReactElement | undefined => {
     if (!this.props.showMonthDropdown || overrideHide) {
       return;
     }
@@ -794,7 +794,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
 
   renderMonthYearDropdown = (
     overrideHide: boolean = false,
-  ): JSX.Element | undefined => {
+  ): React.ReactElement | undefined => {
     if (!this.props.showMonthYearDropdown || overrideHide) {
       return;
     }
@@ -813,7 +813,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     this.props.setPreSelection && this.props.setPreSelection(getStartOfToday());
   };
 
-  renderTodayButton = (): JSX.Element | undefined => {
+  renderTodayButton = (): React.ReactElement | undefined => {
     if (!this.props.todayButton || this.props.showTimeSelectOnly) {
       return;
     }
@@ -914,7 +914,11 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     );
   };
 
-  renderYearHeader = ({ monthDate }: { monthDate: Date }): JSX.Element => {
+  renderYearHeader = ({
+    monthDate,
+  }: {
+    monthDate: Date;
+  }): React.ReactElement => {
     const {
       showYearPicker,
       yearItemNumber = Calendar.defaultProps.yearItemNumber,
@@ -936,7 +940,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
   }: {
     monthDate: Date;
     i?: number;
-  }): JSX.Element | null => {
+  }): React.ReactElement | null => {
     const headerArgs = { monthDate, i };
     switch (true) {
       case this.props.renderCustomHeader !== undefined:
@@ -950,12 +954,12 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     }
   };
 
-  renderMonths = (): JSX.Element[] | undefined => {
+  renderMonths = (): React.ReactElement[] | undefined => {
     if (this.props.showTimeSelectOnly || this.props.showYearPicker) {
       return;
     }
 
-    const monthList: JSX.Element[] = [];
+    const monthList: React.ReactElement[] = [];
     const monthsShown =
       this.props.monthsShown ?? Calendar.defaultProps.monthsShown;
     const monthsToSubtract = this.props.showPreviousMonths
@@ -987,6 +991,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
           <Month
             {...Calendar.defaultProps}
             {...this.props}
+            containerRef={this.containerRef}
             ariaLabelPrefix={this.props.monthAriaLabelPrefix}
             day={monthDate}
             onDayClick={this.handleDayClick}
@@ -1005,7 +1010,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     return monthList;
   };
 
-  renderYears = (): JSX.Element | undefined => {
+  renderYears = (): React.ReactElement | undefined => {
     if (this.props.showTimeSelectOnly) {
       return;
     }
@@ -1029,7 +1034,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     return;
   };
 
-  renderTimeSection = (): JSX.Element | undefined => {
+  renderTimeSection = (): React.ReactElement | undefined => {
     if (
       this.props.showTimeSelect &&
       (this.state.monthContainer || this.props.showTimeSelectOnly)
@@ -1048,7 +1053,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     return;
   };
 
-  renderInputTimeSection = (): JSX.Element | undefined => {
+  renderInputTimeSection = (): React.ReactElement | undefined => {
     const time = this.props.selected
       ? new Date(this.props.selected)
       : undefined;
@@ -1070,7 +1075,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     return;
   };
 
-  renderAriaLiveRegion = (): JSX.Element => {
+  renderAriaLiveRegion = (): React.ReactElement => {
     const { startPeriod, endPeriod } = getYearsPeriod(
       this.state.date,
       this.props.yearItemNumber ?? Calendar.defaultProps.yearItemNumber,
@@ -1102,7 +1107,7 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     );
   };
 
-  renderChildren = (): JSX.Element | undefined => {
+  renderChildren = (): React.ReactElement | undefined => {
     if (this.props.children) {
       return (
         <div className="react-datepicker__children-container">
@@ -1113,32 +1118,33 @@ export default class Calendar extends Component<CalendarProps, CalendarState> {
     return;
   };
 
-  render(): JSX.Element {
+  render(): React.ReactElement {
     const Container = this.props.container || CalendarContainer;
     return (
       <ClickOutsideWrapper
         onClickOutside={this.handleClickOutside}
         style={{ display: "contents" }}
-        containerRef={this.containerRef}
         ignoreClass={this.props.outsideClickIgnoreClass}
       >
-        <Container
-          className={clsx("react-datepicker", this.props.className, {
-            "react-datepicker--time-only": this.props.showTimeSelectOnly,
-          })}
-          showTime={this.props.showTimeSelect || this.props.showTimeInput}
-          showTimeSelectOnly={this.props.showTimeSelectOnly}
-        >
-          {this.renderAriaLiveRegion()}
-          {this.renderPreviousButton()}
-          {this.renderNextButton()}
-          {this.renderMonths()}
-          {this.renderYears()}
-          {this.renderTodayButton()}
-          {this.renderTimeSection()}
-          {this.renderInputTimeSection()}
-          {this.renderChildren()}
-        </Container>
+        <div style={{ display: "contents" }} ref={this.containerRef}>
+          <Container
+            className={clsx("react-datepicker", this.props.className, {
+              "react-datepicker--time-only": this.props.showTimeSelectOnly,
+            })}
+            showTime={this.props.showTimeSelect || this.props.showTimeInput}
+            showTimeSelectOnly={this.props.showTimeSelectOnly}
+          >
+            {this.renderAriaLiveRegion()}
+            {this.renderPreviousButton()}
+            {this.renderNextButton()}
+            {this.renderMonths()}
+            {this.renderYears()}
+            {this.renderTodayButton()}
+            {this.renderTimeSection()}
+            {this.renderInputTimeSection()}
+            {this.renderChildren()}
+          </Container>
+        </div>
       </ClickOutsideWrapper>
     );
   }

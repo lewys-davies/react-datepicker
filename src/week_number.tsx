@@ -16,8 +16,9 @@ interface WeekNumberProps {
   inline?: boolean;
   shouldFocusDayInline?: boolean;
   handleOnKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
-  containerRef?: React.RefObject<HTMLDivElement>;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
   isInputFocused?: boolean;
+  isWeekDisabled?: boolean;
 }
 
 export default class WeekNumber extends Component<WeekNumberProps> {
@@ -108,16 +109,17 @@ export default class WeekNumber extends Component<WeekNumberProps> {
       this.weekNumberEl.current.focus({ preventScroll: true });
   };
 
-  render(): JSX.Element {
+  render(): React.ReactElement {
     const {
       weekNumber,
+      isWeekDisabled,
       ariaLabelPrefix = WeekNumber.defaultProps.ariaLabelPrefix,
       onClick,
     } = this.props;
 
     const weekNumberClasses = {
       "react-datepicker__week-number": true,
-      "react-datepicker__week-number--clickable": !!onClick,
+      "react-datepicker__week-number--clickable": !!onClick && !isWeekDisabled,
       "react-datepicker__week-number--selected":
         !!onClick && isSameDay(this.props.date, this.props.selected),
     };
